@@ -1,0 +1,61 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+# GoReleaser v2 configuration for Zipit.
+version: 2
+
+project_name: zipit
+
+builds:
+  - id: zipit
+    main: ./cmd/zipit
+    binary: zipit
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X github.com/poizdev/zipit/internal/buildinfo.Version=v{{ .Version }}
+      - -X github.com/poizdev/zipit/internal/buildinfo.Commit={{ .Commit }}
+      - -X github.com/poizdev/zipit/internal/buildinfo.BuildDate={{ .Date }}
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - id: zipit
+    ids:
+      - zipit
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    formats:
+      - tar.gz
+    format_overrides:
+      - goos: windows
+        formats:
+          - zip
+
+nfpms:
+  - id: zipit
+    ids:
+      - zipit
+    package_name: zipit
+    file_name_template: "{{ .PackageName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    vendor: Zipit contributors
+    homepage: https://github.com/poizdev/zipit
+    maintainer: Zipit contributors
+    description: Create intentional ZIP archives from directory trees.
+    license: Apache-2.0
+    bindir: /usr/bin
+    formats:
+      - deb
+      - rpm
+
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+
+snapshot:
+  version_template: "{{ .Version }}-SNAPSHOT-{{ .ShortCommit }}"
