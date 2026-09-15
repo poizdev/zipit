@@ -17,6 +17,30 @@ fail() {
 [ "$(wc -l <"$dist/checksums.txt")" -eq 10 ] ||
   fail "expected checksums for six archives and four packages"
 
+check_direct_archive() {
+  target=$1
+  extension=$2
+  expected=$3
+  archive=$(find "$dist" -maxdepth 1 -type f -name "zipit_*_${target}.${extension}")
+  [ "$(printf '%s\n' "$archive" | sed '/^$/d' | wc -l)" -eq 1 ] ||
+    fail "expected one direct archive for $target"
+
+  case "$extension" in
+    tar.gz) contents=$(tar -tzf "$archive") ;;
+    zip) contents=$(bsdtar -tf "$archive") ;;
+    *) fail "unsupported direct archive format: $extension" ;;
+  esac
+  [ "$contents" = "$expected" ] ||
+    fail "$(basename "$archive") must contain only $expected; found: $(printf '%s' "$contents" | tr '\n' ' ')"
+}
+
+check_direct_archive linux_amd64 tar.gz zipit
+check_direct_archive linux_arm64 tar.gz zipit
+check_direct_archive darwin_amd64 tar.gz zipit
+check_direct_archive darwin_arm64 tar.gz zipit
+check_direct_archive windows_amd64 zip zipit.exe
+check_direct_archive windows_arm64 zip zipit.exe
+
 check_payload_listing() {
   listing=$1
   printf '%s\n' "$listing" | sed -e 's#^\./##' -e 's#^/##' | while IFS= read -r entry; do
